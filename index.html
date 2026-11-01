@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>초등학교 생활기록부 사진 자동 크롭 프로그램</title>
+  <meta name="description" content="초등학교 생활기록부(NEIS) 규격(3.5x4.5cm, 413x531px)에 맞춰 학생 사진을 자동으로 얼굴 인식하여 자르고 일괄 저장해주는 프로그램입니다. 서버 전송 없는 100% 로컬 보안 구동.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>초등학교 생활기록부 사진 자동 크롭</h1>
+        <p>NEIS 규격 3.5×4.5cm 자동 얼굴 맞춤 및 일괄 변환</p>
+      </div>
+    </div>
+
+    <div class="header-badges">
+      <div class="badge-tag ratio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+        </svg>
+        <span>생기부 규격 3.5 × 4.5 cm (7:9)</span>
+      </div>
+      <div class="badge-tag privacy" title="사진 파일이 외부 서버로 전송되지 않고 내 PC 브라우저 안에서만 100% 안전하게 처리됩니다.">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>100% 로컬 개인정보 보호 (서버 전송 없음)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- Left Panel: File Management -->
+    <aside class="panel left-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>사진 목록</span>
+          <span class="item-count" id="fileCount">0</span>
+        </div>
+        <button type="button" class="btn-text" id="btnClearAll" title="모든 파일 삭제">전체 비우기</button>
+      </div>
+
+      <!-- Upload Zone -->
+      <div class="upload-section">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div class="dropzone-text">
+            <h3>사진 파일을 여기에 드래그</h3>
+            <p>여러 장 일괄 추가 또는 폴더 선택 가능</p>
+          </div>
+        </div>
+
+        <div class="upload-buttons">
+          <button type="button" class="btn-upload-choice" id="btnUploadFiles">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>파일 선택</span>
+          </button>
+          <button type="button" class="btn-upload-choice" id="btnUploadFolder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>폴더째 선택</span>
+          </button>
+        </div>
+
+        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" />
+        <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;" />
+      </div>
+
+      <!-- File List Container -->
+      <div class="file-list-container" id="fileList">
+        <!-- Empty placeholder -->
+        <div class="empty-state" id="emptyState">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <p>등록된 사진이 없습니다.<br>학생 사진들을 위 영역에 끌어다 놓으세요.</p>
+        </div>
+      </div>
+
+      <div class="file-list-footer">
+        <span style="font-size: 0.72rem; color: var(--text-dim);">클립보드(Ctrl+V) 붙여넣기 지원</span>
+      </div>
+    </aside>
+
+    <!-- Center Panel: Interactive Canvas Workspace -->
+    <section class="panel center-panel">
+      <!-- Toolbar -->
+      <div class="workspace-toolbar">
+        <div class="tool-group">
+          <button type="button" class="tool-btn active" id="btnToggleGuide" title="생기부 표준 가이드라인 켜기/끄기 (단축키: G)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"></path>
+            </svg>
+            <span>생기부 가이드선</span>
+          </button>
+          <button type="button" class="tool-btn" id="btnResetCrop" title="초기 자동 인식 위치로 복귀 (단축키: R)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 4v6h6M23 20v-6h-6"></path>
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+            </svg>
+            <span>자동 맞춤 복귀</span>
+          </button>
+        </div>
+
+        <div class="tool-group">
+          <button type="button" class="tool-btn" id="btnFlipH" title="좌우 반전">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3m8-18h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v20"></path>
+            </svg>
+            <span>좌우 반전</span>
+          </button>
+          <button type="button" class="tool-btn" id="btnRotate90" title="90도 시계방향 회전">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+            </svg>
+            <span>90° 회전</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas Viewport -->
+      <div class="canvas-viewport" id="canvasViewport">
+        <!-- Floating Navigation Prev/Next -->
+        <button type="button" class="nav-arrow nav-prev" id="btnPrev" title="이전 사진 (← 방향키)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button type="button" class="nav-arrow nav-next" id="btnNext" title="다음 사진 (→ 방향키)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
+        <!-- Main Interactive Crop Canvas -->
+        <canvas id="cropCanvas"></canvas>
+
+        <!-- Floating Hint -->
+        <div class="canvas-hint">
+          <span>마우스 <strong>드래그</strong>: 위치 이동</span>
+          <span>•</span>
+          <span>마우스 <strong>휠</strong>: 확대/축소</span>
+          <span>•</span>
+          <span>이동: <kbd>←</kbd> <kbd>→</kbd></span>
+        </div>
+      </div>
+
+      <!-- Guide Legend -->
+      <div class="guide-legend">
+        <div class="legend-item">
+          <span class="legend-dot dot-crown"></span>
+          <span>정수리 권장선 (상단 여백 13%)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot dot-eyes"></span>
+          <span>눈 위치선 (상단 40%)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot dot-chin"></span>
+          <span>턱선 위치 (상단 68%)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Adjustments & Export Settings -->
+    <aside class="panel right-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>미세조정 & 저장 옵션</span>
+        </div>
+      </div>
+
+      <div class="controls-scroll">
+
+        <!-- Position & Size Fine-tuning -->
+        <div class="section-group">
+          <div class="section-label">얼굴 크기 & 각도 조절</div>
+
+          <div class="slider-control">
+            <div class="slider-header">
+              <span>얼굴 확대 / 축소 (Zoom)</span>
+              <span class="slider-val" id="zoomVal">100%</span>
+            </div>
+            <div class="slider-track-wrap">
+              <input type="range" id="sliderZoom" min="0.4" max="2.5" step="0.02" value="1.0" />
+              <button type="button" class="btn-icon-tiny" id="btnResetZoom" title="100% 리셋">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-header">
+              <span>미세 기울기 회전</span>
+              <span class="slider-val" id="rotateVal">0°</span>
+            </div>
+            <div class="slider-track-wrap">
+              <input type="range" id="sliderRotate" min="-30" max="30" step="1" value="0" />
+              <button type="button" class="btn-icon-tiny" id="btnResetRotate" title="0도 리셋">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tone Fine-tuning (Brightness & Contrast) -->
+        <div class="section-group">
+          <div class="section-label">밝기 & 대비 보정 (선택)</div>
+
+          <div class="slider-control">
+            <div class="slider-header">
+              <span>밝기 (Brightness)</span>
+              <span class="slider-val" id="brightnessVal">100%</span>
+            </div>
+            <div class="slider-track-wrap">
+              <input type="range" id="sliderBrightness" min="60" max="140" step="1" value="100" />
+              <button type="button" class="btn-icon-tiny" id="btnResetBrightness" title="기본값 리셋">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="slider-control">
+            <div class="slider-header">
+              <span>대비 (Contrast)</span>
+              <span class="slider-val" id="contrastVal">100%</span>
+            </div>
+            <div class="slider-track-wrap">
+              <input type="range" id="sliderContrast" min="60" max="140" step="1" value="100" />
+              <button type="button" class="btn-icon-tiny" id="btnResetContrast" title="기본값 리셋">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Format (JPG / PNG) -->
+        <div class="section-group">
+          <div class="section-label">저장 파일 포맷</div>
+          <div class="segmented-control">
+            <button type="button" class="segment-btn format-segment active" data-format="image/jpeg">JPG (추천/나이스 호환)</button>
+            <button type="button" class="segment-btn format-segment" data-format="image/png">PNG (무손실)</button>
+          </div>
+
+          <div class="slider-control" id="qualityGroup">
+            <div class="slider-header">
+              <span>JPG 저장 품질</span>
+              <span class="slider-val" id="qualityVal">95%</span>
+            </div>
+            <input type="range" id="sliderQuality" min="80" max="100" step="1" value="95" />
+          </div>
+        </div>
+
+        <!-- Resolution Presets -->
+        <div class="section-group">
+          <div class="section-label">생기부 해상도 규격 (3.5 × 4.5 cm)</div>
+          <div class="preset-grid">
+            <div class="preset-card active" data-width="413" data-height="531">
+              <div>
+                <div class="preset-card-title">나이스 표준 고화질 (413 × 531 px)</div>
+                <div class="preset-card-sub">300 DPI • 교육부 나이스 공식 권장 규격</div>
+              </div>
+              <span class="preset-card-badge">기본</span>
+            </div>
+
+            <div class="preset-card" data-width="350" data-height="450">
+              <div>
+                <div class="preset-card-title">나이스 일반 표준 (350 × 450 px)</div>
+                <div class="preset-card-sub">기본 웹 등록형 • 저용량 최적화</div>
+              </div>
+            </div>
+
+            <div class="preset-card" data-width="700" data-height="900">
+              <div>
+                <div class="preset-card-title">인쇄용 초고화질 (700 × 900 px)</div>
+                <div class="preset-card-sub">600 DPI • 졸업앨범 및 실물 출력 겸용</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filename Rule -->
+        <div class="section-group">
+          <div class="section-label">파일명 저장 규칙</div>
+          <select class="select-input" id="selectFilenameRule">
+            <option value="suffix">접미사 추가 (예: 김하늘_생기부.jpg)</option>
+            <option value="original">원본 파일명 유지 (예: 김하늘.jpg)</option>
+            <option value="numbered">번호 순서 매기기 (예: 01_김하늘.jpg)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Action Footer -->
+      <div class="export-footer">
+        <button type="button" class="btn-primary" id="btnSaveAll" title="목록의 모든 사진을 ZIP 압축 파일로 한번에 저장">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>전체 일괄 저장 (.ZIP 다운로드)</span>
+        </button>
+
+        <button type="button" class="btn-secondary" id="btnSaveCurrent" title="현재 선택된 사진만 저장 (단축키: Ctrl+S)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          <span>현재 사진만 개별 저장</span>
+        </button>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Batch Export Progress Modal -->
+  <div class="modal-backdrop" id="progressModal">
+    <div class="modal-card">
+      <div class="modal-spinner"></div>
+      <div class="modal-title">생기부 사진 일괄 처리 중</div>
+      <div class="modal-desc" id="progressDesc">학생 사진을 고화질로 변환하고 있습니다...</div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">0% (0 / 0)</div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/jszip.min.js"></script>
+  <script src="js/facefinder-data.js"></script>
+  <script src="js/pico.js"></script>
+  <script src="js/face-detector.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

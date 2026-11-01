@@ -1,0 +1,17 @@
+﻿# OS Files
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Logs & temp
+*.log
+*.tmp
+
+# Student privacy safeguards
+/photos/
+/students/
+*.zip
