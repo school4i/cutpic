@@ -172,6 +172,13 @@ body {
   color: #a5b4fc;
 }
 
+.badge-tag.author {
+  background: rgba(217, 70, 239, 0.15);
+  border-color: rgba(217, 70, 239, 0.35);
+  color: #f0abfc;
+  font-weight: 600;
+}
+
 .badge-tag svg {
   width: 14px;
   height: 14px;
