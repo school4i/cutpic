@@ -5,12 +5,70 @@
 (function() {
   'use strict';
 
+  // --- Ratio & Resolution Presets ---
+  const RATIO_CONFIGS = {
+    '3:4': {
+      aspectRatio: 3 / 4,
+      badgeText: '생기부 규격 3 × 4 cm (3:4)',
+      sectionLabel: '생기부 해상도 규격 (3 × 4 cm)',
+      presets: [
+        {
+          width: 354,
+          height: 472,
+          title: '표준 고화질 (354 × 472 px)',
+          sub: '300 DPI • 생기부 출력(3×4cm) 반명함 표준',
+          badge: '기본'
+        },
+        {
+          width: 300,
+          height: 400,
+          title: '일반 표준 (300 × 400 px)',
+          sub: '기본 웹 등록형 • 저용량 최적화'
+        },
+        {
+          width: 600,
+          height: 800,
+          title: '인쇄용 초고화질 (600 × 800 px)',
+          sub: '600 DPI • 졸업앨범 및 실물 출력 겸용'
+        }
+      ]
+    },
+    '7:9': {
+      aspectRatio: 3.5 / 4.5,
+      badgeText: '생기부 규격 3.5 × 4.5 cm (7:9)',
+      sectionLabel: '생기부 해상도 규격 (3.5 × 4.5 cm)',
+      presets: [
+        {
+          width: 413,
+          height: 531,
+          title: '나이스 표준 고화질 (413 × 531 px)',
+          sub: '300 DPI • 교육부 나이스 공식 권장 규격',
+          badge: '기본'
+        },
+        {
+          width: 350,
+          height: 450,
+          title: '나이스 일반 표준 (350 × 450 px)',
+          sub: '기본 웹 등록형 • 저용량 최적화'
+        },
+        {
+          width: 700,
+          height: 900,
+          title: '인쇄용 초고화질 (700 × 900 px)',
+          sub: '600 DPI • 졸업앨범 및 실물 출력 겸용'
+        }
+      ]
+    }
+  };
+
   // --- State ---
   const state = {
     files: [], // Array of photo objects
     selectedId: null,
     settings: {
-      resolution: { width: 413, height: 531, label: '나이스 표준 (413 × 531)' },
+      ratioKey: '3:4',
+      aspectRatio: 3 / 4,
+      resolution: { width: 354, height: 472, label: '표준 고화질 (354 × 472 px)' },
       format: 'image/jpeg', // 'image/jpeg' or 'image/png'
       jpegQuality: 0.95,
       filenameRule: 'suffix', // 'suffix' | 'original' | 'numbered'
@@ -60,11 +118,14 @@
     contrastVal: document.getElementById('contrastVal'),
 
     // Preset & Formats
+    headerRatioBadge: document.getElementById('headerRatioBadge'),
+    ratioSegments: document.querySelectorAll('.ratio-segment'),
+    resolutionSectionLabel: document.getElementById('resolutionSectionLabel'),
+    presetGrid: document.getElementById('presetGrid'),
     formatSegments: document.querySelectorAll('.format-segment'),
     qualityGroup: document.getElementById('qualityGroup'),
     sliderQuality: document.getElementById('sliderQuality'),
     qualityVal: document.getElementById('qualityVal'),
-    presetCards: document.querySelectorAll('.preset-card'),
     selectFilenameRule: document.getElementById('selectFilenameRule'),
 
     // Save buttons
@@ -88,6 +149,7 @@
     }
 
     bindEvents();
+    renderResolutionPresets(state.settings.ratioKey);
     handleResize();
     updateUI();
   }
@@ -355,19 +417,26 @@
       el.qualityVal.textContent = `${q}%`;
     });
 
-    // Preset cards
-    el.presetCards.forEach(card => {
-      card.addEventListener('click', () => {
-        el.presetCards.forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        const w = parseInt(card.dataset.width, 10);
-        const h = parseInt(card.dataset.height, 10);
-        state.settings.resolution = {
-          width: w,
-          height: h,
-          label: card.querySelector('.preset-card-title').textContent
-        };
+    // Aspect Ratio selection (3:4 vs 7:9)
+    el.ratioSegments.forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchAspectRatio(btn.dataset.ratio);
       });
+    });
+
+    // Preset cards (event delegation)
+    el.presetGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.preset-card');
+      if (!card) return;
+      el.presetGrid.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      const w = parseInt(card.dataset.width, 10);
+      const h = parseInt(card.dataset.height, 10);
+      state.settings.resolution = {
+        width: w,
+        height: h,
+        label: card.querySelector('.preset-card-title').textContent
+      };
     });
 
     // Filename Rule
@@ -442,7 +511,12 @@
           photo.face = face;
 
           // Compute Initial NEIS Crop
-          const crop = window.FaceDetectorModule.computeNeisCrop(photo.width, photo.height, face);
+          const crop = window.FaceDetectorModule.computeNeisCrop(
+            photo.width,
+            photo.height,
+            face,
+            state.settings.aspectRatio
+          );
           photo.crop = {
             baseCenterX: crop.centerX,
             baseCenterY: crop.centerY,
@@ -515,9 +589,84 @@
     }
   }
 
+  function renderResolutionPresets(ratioKey) {
+    const config = RATIO_CONFIGS[ratioKey];
+    if (!config) return;
+
+    el.resolutionSectionLabel.textContent = config.sectionLabel;
+    el.presetGrid.innerHTML = config.presets.map((preset, idx) => `
+      <div class="preset-card${idx === 0 ? ' active' : ''}" data-width="${preset.width}" data-height="${preset.height}">
+        <div>
+          <div class="preset-card-title">${preset.title}</div>
+          <div class="preset-card-sub">${preset.sub}</div>
+        </div>
+        ${preset.badge ? `<span class="preset-card-badge">${preset.badge}</span>` : ''}
+      </div>
+    `).join('');
+
+    const defaultPreset = config.presets[0];
+    state.settings.resolution = {
+      width: defaultPreset.width,
+      height: defaultPreset.height,
+      label: defaultPreset.title
+    };
+  }
+
+  function switchAspectRatio(ratioKey) {
+    const config = RATIO_CONFIGS[ratioKey];
+    if (!config || state.settings.ratioKey === ratioKey) return;
+
+    state.settings.ratioKey = ratioKey;
+    state.settings.aspectRatio = config.aspectRatio;
+
+    el.ratioSegments.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.ratio === ratioKey);
+    });
+    if (el.headerRatioBadge) {
+      el.headerRatioBadge.textContent = config.badgeText;
+    }
+
+    renderResolutionPresets(ratioKey);
+
+    // Update existing photos' crop frames to match the new aspect ratio
+    state.files.forEach(photo => {
+      if (!photo.crop) return;
+      if (!photo.crop.isManualModified && photo.face && window.FaceDetectorModule) {
+        const crop = window.FaceDetectorModule.computeNeisCrop(
+          photo.width,
+          photo.height,
+          photo.face,
+          config.aspectRatio
+        );
+        photo.crop.baseCenterX = crop.centerX;
+        photo.crop.baseCenterY = crop.centerY;
+        photo.crop.cropW = crop.cropW;
+        photo.crop.cropH = crop.cropH;
+      } else {
+        photo.crop.cropW = photo.crop.cropH * config.aspectRatio;
+      }
+    });
+
+    handleResize();
+    renderCurrentCanvas();
+  }
+
   function resetCurrentCrop() {
     const current = getCurrentPhoto();
     if (!current || !current.crop) return;
+
+    if (current.face && window.FaceDetectorModule) {
+      const crop = window.FaceDetectorModule.computeNeisCrop(
+        current.width,
+        current.height,
+        current.face,
+        state.settings.aspectRatio
+      );
+      current.crop.baseCenterX = crop.centerX;
+      current.crop.baseCenterY = crop.centerY;
+      current.crop.cropW = crop.cropW;
+      current.crop.cropH = crop.cropH;
+    }
 
     current.crop.panX = 0;
     current.crop.panY = 0;
@@ -563,8 +712,8 @@
 
     ctx.scale(dpr, dpr);
 
-    // Compute standard 3.5:4.5 frame centered in viewport
-    const targetRatio = 3.5 / 4.5; // ~0.7778
+    // Compute target ratio frame centered in viewport
+    const targetRatio = state.settings.aspectRatio;
     const margin = 40;
     const maxW = w - margin * 2;
     const maxH = h - margin * 2;

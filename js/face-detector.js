@@ -165,30 +165,31 @@
     },
 
     /**
-     * Compute optimal school record (NEIS) 3.5:4.5 crop parameters
+     * Compute optimal school record (NEIS) crop parameters for the target aspect ratio
      * @param {number} imgW - Original image width
      * @param {number} imgH - Original image height
      * @param {object} face - Face detection box {x, y, width, height}
-     * @returns {object} { centerX, centerY, cropW, cropH, scale }
+     * @param {number} aspectRatio - Target width / height ratio (default 3/4)
+     * @returns {object} { centerX, centerY, cropW, cropH, baseScale }
      */
-    computeNeisCrop(imgW, imgH, face) {
+    computeNeisCrop(imgW, imgH, face, aspectRatio = 3 / 4) {
       const faceSize = Math.max(face.width, face.height);
       const faceCenterX = face.x + face.width / 2;
       const faceCenterY = face.y + face.height / 2;
 
-      // School record & passport standard:
+      // School record & portrait standard:
       // Face occupies ~55% of total photo height
       let targetCropH = faceSize / 0.55;
-      let targetCropW = targetCropH * (3.5 / 4.5); // 7:9 ratio
+      let targetCropW = targetCropH * aspectRatio;
 
       // Safety check: if target crop exceeds image dimensions, scale down crop
       if (targetCropH > imgH) {
         targetCropH = imgH;
-        targetCropW = targetCropH * (3.5 / 4.5);
+        targetCropW = targetCropH * aspectRatio;
       }
       if (targetCropW > imgW) {
         targetCropW = imgW;
-        targetCropH = targetCropW * (4.5 / 3.5);
+        targetCropH = targetCropW / aspectRatio;
       }
 
       // Vertical position: Face center sits at ~43% from top of crop frame
