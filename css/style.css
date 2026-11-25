@@ -60,10 +60,10 @@ body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-main);
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow: hidden;
   background-image: 
     radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(217, 70, 239, 0.1) 0px, transparent 50%),
@@ -89,7 +89,8 @@ body {
 
 /* Header */
 .app-header {
-  height: 64px;
+  min-height: 64px;
+  flex-shrink: 0;
   background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -187,14 +188,15 @@ body {
 /* App Layout Grid */
 .app-container {
   flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 320px 1fr 340px;
+  grid-template-rows: minmax(0, 1fr);
   gap: 16px;
   padding: 16px;
   max-width: 1920px;
   margin: 0 auto;
   width: 100%;
-  height: calc(100vh - 64px);
   overflow: hidden;
 }
 
@@ -207,11 +209,14 @@ body {
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
   box-shadow: var(--shadow-md);
 }
 
 .panel-header {
+  flex-shrink: 0;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -251,6 +256,7 @@ body {
 }
 
 .upload-section {
+  flex-shrink: 0;
   padding: 14px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -337,7 +343,11 @@ body {
 /* File List Scroll */
 .file-list-container {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #475569 rgba(15, 23, 42, 0.5);
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -368,6 +378,7 @@ body {
 }
 
 .file-item {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -470,6 +481,7 @@ body {
 }
 
 .file-list-footer {
+  flex-shrink: 0;
   padding: 10px 14px;
   border-top: 1px solid var(--border-color);
   display: flex;
@@ -499,6 +511,7 @@ body {
 }
 
 .workspace-toolbar {
+  flex-shrink: 0;
   padding: 10px 18px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -546,6 +559,7 @@ body {
 
 .canvas-viewport {
   flex: 1;
+  min-height: 0;
   position: relative;
   background: #090d16;
   background-image: 
@@ -647,6 +661,7 @@ body {
 
 .controls-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 16px;
   display: flex;
@@ -844,6 +859,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* Export Action Buttons Footer */
 .export-footer {
+  flex-shrink: 0;
   padding: 16px;
   border-top: 1px solid var(--border-color);
   background: rgba(15, 23, 42, 0.6);
@@ -908,6 +924,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* Guide Overlay Legend in Center Panel bottom */
 .guide-legend {
+  flex-shrink: 0;
   padding: 8px 16px;
   background: rgba(15, 23, 42, 0.7);
   border-top: 1px solid var(--border-color);
@@ -1033,15 +1050,31 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 @media (max-width: 900px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
   .app-container {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
     height: auto;
-    overflow-y: auto;
+    overflow: visible;
   }
   .app-header {
     padding: 0 16px;
   }
   .panel {
+    height: auto;
     min-height: 400px;
+  }
+  .left-panel {
+    max-height: 520px;
+  }
+  .file-list-container {
+    min-height: 180px;
+  }
+  .center-panel {
+    min-height: 480px;
   }
 }
